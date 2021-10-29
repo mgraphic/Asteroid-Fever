@@ -1,0 +1,48 @@
+.container {
+    height: 100vh;
+    width: 100vw;
+    display: flex;
+    background: $darkShade;
+    align-items: center;
+    justify-content: center;
+
+    .instructions {
+        position: fixed;
+        bottom: 0;
+        width: 100vw;
+        text-align: center;
+        padding: 5px;
+        color: $lightShade;
+    }
+}
+
+.gameboard {
+    width: $canvasWidth;
+    background-color: $background;
+
+    .canvas {
+        width: $canvasWidth;
+        height: $canvasHeight;
+
+        &.click-to-start {
+            &:hover {
+                cursor: pointer;
+                border: 5px solid $hilite;
+            }
+        }
+    }
+
+    .ledger {
+        display: flex;
+        justify-content: space-between;
+        padding: 15px;
+        font-size: 20px;
+        color: $forground;
+        font-family: 'Digital';
+        background-color: $darkShade2;
+
+        .lives {
+            line-height: 20px;
+        }
+    }
+}
