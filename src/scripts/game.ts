@@ -2,10 +2,11 @@ import '../styles/index.scss';
 
 import { Asteroid } from './sprites/asteroid';
 import {
+    AsteroidCounter,
     astroidLevelType,
     CanvasContext,
     Coordinates2D,
-    KeyAction,
+    KeyState,
 } from './models';
 import { Bullet } from './sprites/bullet';
 import { Config } from './config';
@@ -19,6 +20,8 @@ import {
 import { Explosion } from './sprites/explosion';
 import { Message } from './sprites/message';
 import { Ship } from './sprites/ship';
+import { Sound } from './sound';
+import { Music } from './sprites/music';
 
 export class Game {
     // Default values:
@@ -27,7 +30,6 @@ export class Game {
     private highScore: number = 0;
     private level: number = 1;
     private transitioning: boolean = false;
-    private asteroidsCount: number = Config.GAME_ASTEROIDS_COUNT;
     private asteroidSpeed: number = Config.ASTEROID_SPEED;
 
     // Element containers:
@@ -45,15 +47,35 @@ export class Game {
     private asteroids: Asteroid[] = [];
     private explosions: Explosion[] = [];
     private messages: Message[] = [];
+    private music: Music;
     private localStorage: Storage = window.localStorage;
     private demoTimers: NodeJS.Timeout[] = [];
-    private action: KeyAction = {
+    private soundEffects: { [key: string]: Sound };
+    private sounds: KeyState = {
+        soundOn: true,
+        musicOn: true,
+    };
+    private asteroidCounter: AsteroidCounter = {
+        firstLevel: Config.GAME_ASTEROIDS_COUNT,
+        total: 0,
+        remaining: 0,
+    };
+    private actions: KeyState = {
         RotateLeft: false,
         RotateRight: false,
         Thrust: false,
         Pause: false,
         Demo: true,
     };
+
+    // Setters & getters:
+    private _soundEnabled: boolean = true;
+    public get soundEnabled(): boolean {
+        return this._soundEnabled;
+    }
+    public set soundEnabled(enabled: boolean) {
+        this._soundEnabled = enabled;
+    }
 
     public constructor(gameBoard: HTMLElement) {
         this.gameBoardElement = gameBoard;
@@ -134,6 +156,15 @@ export class Game {
             this.keyDownHandler.bind(this)
         );
 
+        this.soundEffects = {
+            explode: new Sound(this.sounds, Config.SOUND_EXPLODE),
+            hit: new Sound(this.sounds, Config.SOUND_HIT),
+            laser: new Sound(this.sounds, Config.SOUND_LASER),
+            thrust: new Sound(this.sounds, Config.SOUND_THRUST),
+        };
+
+        this.music = new Music(this.sounds);
+
         this.ship = new Ship(this.canvas);
         this.ship.hide();
         this.startDemo();
@@ -141,7 +172,7 @@ export class Game {
     }
 
     private reset(): void {
-        this.asteroidsCount = Config.GAME_ASTEROIDS_COUNT;
+        this.asteroidCounter.firstLevel = Config.GAME_ASTEROIDS_COUNT;
         this.asteroidSpeed = Config.ASTEROID_SPEED;
         this.lives = 3;
         this.score = 0;
@@ -150,9 +181,9 @@ export class Game {
         this.asteroids = [];
         this.explosions = [];
         this.messages = [];
-        this.action.RotateLeft = false;
-        this.action.RotateRight = false;
-        this.action.Thrust = false;
+        this.actions.RotateLeft = false;
+        this.actions.RotateRight = false;
+        this.toggleThrust(false);
         this.ship.reset();
     }
 
@@ -172,8 +203,9 @@ export class Game {
                 this.ship.hide();
                 this.ship.reset();
                 this.ship.manifest();
+                this.soundEffects.thrust.volumeOn();
 
-                if (!this.action.Demo) {
+                if (!this.actions.Demo) {
                     this.refreshLivesDisplay();
                 }
             }
@@ -181,11 +213,15 @@ export class Game {
     }
 
     private endLife(): void {
+        this.soundEffects.thrust.volumeOff();
+
         this.explosions.push(
             new Explosion(this.canvas, this.ship.getCenterPosition())
         );
 
-        if (!this.action.Demo) {
+        this.soundEffects.explode.play();
+
+        if (!this.actions.Demo) {
             this.lives--;
 
             if (this.lives < 0) {
@@ -208,7 +244,8 @@ export class Game {
     }
 
     private startDemo(): void {
-        this.action.Demo = true;
+        this.actions.Demo = true;
+        this.mute();
         this.asteroids = [];
 
         this.messages.push(
@@ -232,7 +269,7 @@ export class Game {
                 const timer: number = Math.round(getRandomInRange(1000, 5000));
                 this.demoTimers.push(
                     setTimeout((): void => {
-                        this.action.Thrust = !this.action.Thrust;
+                        this.toggleThrust();
                         loop();
                     }, timer)
                 );
@@ -248,14 +285,14 @@ export class Game {
                 this.demoTimers.push(
                     setTimeout((): void => {
                         if (dir < 0) {
-                            this.action.RotateLeft = true;
-                            this.action.RotateRight = false;
+                            this.actions.RotateLeft = true;
+                            this.actions.RotateRight = false;
                         } else if (dir > 0) {
-                            this.action.RotateLeft = false;
-                            this.action.RotateRight = true;
+                            this.actions.RotateLeft = false;
+                            this.actions.RotateRight = true;
                         } else {
-                            this.action.RotateLeft = false;
-                            this.action.RotateRight = false;
+                            this.actions.RotateLeft = false;
+                            this.actions.RotateRight = false;
                         }
                         loop();
                     }, timer)
@@ -288,7 +325,7 @@ export class Game {
         });
         this.demoTimers = [];
         this.messages = [];
-        this.action.Demo = false;
+        this.actions.Demo = false;
     }
 
     private async wait(timer: number) {
@@ -296,7 +333,7 @@ export class Game {
     }
 
     private async startGame(): Promise<void> {
-        if (!this.action.Demo) {
+        if (!this.actions.Demo) {
             return;
         }
 
@@ -304,12 +341,14 @@ export class Game {
         this.endDemo();
         this.reset();
         this.refreshLivesDisplay();
+        this.unmute();
         this.startLevel();
     }
 
     private async endGame(): Promise<void> {
         this.transitioning = true;
         this.ship.hide();
+        this.music.mute();
         this.messages.push(
             new Message(
                 this.canvas,
@@ -319,6 +358,7 @@ export class Game {
         );
         await this.wait(5000);
         this.messages = [];
+        this.mute();
         this.startDemo();
         this.canvasElement.classList.add('click-to-start');
     }
@@ -327,7 +367,7 @@ export class Game {
         this.transitioning = true;
         this.refreshLevelDisplay();
 
-        if (!this.action.Demo) {
+        if (!this.actions.Demo) {
             this.messages.push(
                 new Message(
                     this.canvas,
@@ -339,7 +379,14 @@ export class Game {
             this.messages = [];
         }
 
-        for (let i = 0; i < this.asteroidsCount; i++) {
+        const asteroidsTotal: number =
+            this.asteroidCounter.firstLevel *
+            (Math.pow(2, Object.keys(astroidLevelType).length / 2) - 1);
+        this.asteroidCounter.total = asteroidsTotal;
+
+        this.asteroidCounter.remaining = asteroidsTotal;
+
+        for (let i = 0; i < this.asteroidCounter.firstLevel; i++) {
             let allClear: boolean;
             let randomCoordinates: Coordinates2D;
 
@@ -356,15 +403,16 @@ export class Game {
             this.pushAsteroid(randomCoordinates);
         }
 
+        this.setTempo();
         this.transitioning = false;
     }
 
     private async endLevel(): Promise<void> {
         this.transitioning = true;
 
-        if (!this.action.Demo) {
+        if (!this.actions.Demo) {
             this.level++;
-            this.asteroidsCount++;
+            this.asteroidCounter.firstLevel++;
             this.asteroidSpeed += Config.ASTEROID_SPEED_INCREASE;
 
             this.messages.push(
@@ -395,11 +443,12 @@ export class Game {
                 )
             );
             this.setScore(Config.SCORE_FIRE_BULLET);
+            this.soundEffects.laser.play();
         }
     }
 
     private setScore(score: number): void {
-        if (this.action.Demo) {
+        if (this.actions.Demo) {
             return;
         }
 
@@ -413,8 +462,52 @@ export class Game {
         }
     }
 
+    private toggleThrust(thrust?: boolean): void {
+        this.actions.Thrust =
+            thrust !== undefined ? thrust : !this.actions.Thrust;
+        this.ship.toggleThrust(this.actions.Thrust);
+        if (this.actions.Thrust) {
+            this.soundEffects.thrust.play();
+        } else {
+            this.soundEffects.thrust.stop();
+        }
+    }
+
+    private toggleSound(soundOn?: boolean): void {
+        soundOn = soundOn !== undefined ? soundOn : !this.sounds.soundOn;
+
+        this.sounds.soundOn = soundOn;
+        this.sounds.musicOn = soundOn;
+    }
+
+    private mute(): void {
+        const soundKeys: string[] = Object.keys(this.soundEffects);
+
+        soundKeys.forEach((key: string): void => {
+            this.soundEffects[key].mute();
+        });
+
+        this.music.mute();
+    }
+
+    private unmute(): void {
+        const soundKeys: string[] = Object.keys(this.soundEffects);
+
+        soundKeys.forEach((key: string): void => {
+            this.soundEffects[key].unmute();
+        });
+
+        this.music.unmute();
+    }
+
+    private setTempo(): void {
+        this.music.setTempoByRatio(
+            this.asteroidCounter.remaining / this.asteroidCounter.total
+        );
+    }
+
     private animate(): void {
-        if (this.action.Pause) {
+        if (this.actions.Pause) {
             return;
         }
 
@@ -425,14 +518,11 @@ export class Game {
             this.canvas.height
         );
 
-        // manage user control
-        this.ship.toggleThrust(this.action.Thrust);
-
-        if (this.action.RotateLeft) {
+        if (this.actions.RotateLeft) {
             this.ship.rotate(-1);
         }
 
-        if (this.action.RotateRight) {
+        if (this.actions.RotateRight) {
             this.ship.rotate(1);
         }
 
@@ -544,6 +634,8 @@ export class Game {
             this.endLevel();
         }
 
+        this.music.render();
+
         requestAnimationFrame(this.animate.bind(this));
     }
 
@@ -582,6 +674,10 @@ export class Game {
                 nextLevel
             );
         }
+
+        this.soundEffects.hit.play();
+        this.asteroidCounter.remaining--;
+        this.setTempo();
     }
 
     private pushAsteroid(
@@ -598,51 +694,55 @@ export class Game {
     }
 
     private keyDownHandler($event: KeyboardEvent) {
-        if (this.action.Demo) {
+        if (this.actions.Demo) {
             return;
         }
 
         if (Config.KEYS_SHIP_ROTATE_LEFT.includes($event.code)) {
-            this.action.RotateLeft = true;
+            this.actions.RotateLeft = true;
         }
 
         if (Config.KEYS_SHIP_ROTATE_RIGHT.includes($event.code)) {
-            this.action.RotateRight = true;
+            this.actions.RotateRight = true;
         }
 
         if (Config.KEYS_SHIP_THRUST.includes($event.code)) {
-            this.action.Thrust = true;
+            this.toggleThrust(true);
         }
     }
 
     private keyUpHandler($event: KeyboardEvent) {
         if (Config.KEYS_GAME_PAUSE.includes($event.code)) {
-            this.action.Pause = !this.action.Pause;
+            this.actions.Pause = !this.actions.Pause;
 
-            if (!this.action.Pause) {
+            if (!this.actions.Pause) {
                 requestAnimationFrame(this.animate.bind(this));
             }
         }
 
-        if (this.action.Demo) {
+        if (this.actions.Demo) {
             return;
         }
 
         if (Config.KEYS_SHIP_ROTATE_LEFT.includes($event.code)) {
-            this.action.RotateLeft = false;
+            this.actions.RotateLeft = false;
         }
 
         if (Config.KEYS_SHIP_ROTATE_RIGHT.includes($event.code)) {
-            this.action.RotateRight = false;
+            this.actions.RotateRight = false;
         }
 
         if (Config.KEYS_SHIP_THRUST.includes($event.code)) {
-            this.action.Thrust = false;
+            this.toggleThrust(false);
         }
 
         if (Config.KEYS_BULLET_FIRE.includes($event.code)) {
             this.fireBullet();
             this.setScore(Config.SCORE_FIRE_BULLET);
+        }
+
+        if (Config.KEYS_GAME_SOUND.includes($event.code)) {
+            this.toggleSound();
         }
     }
 }

@@ -1,8 +1,16 @@
+// import { Sound } from './sound';
+
 export enum astroidLevelType {
     LEVEL1,
     LEVEL2,
     LEVEL3,
 }
+
+export type AsteroidCounter = {
+    firstLevel: number;
+    total: number;
+    remaining: number;
+};
 
 export type CanvasContext = {
     context: CanvasRenderingContext2D;
@@ -15,7 +23,9 @@ export type Coordinates2D = {
     y: number;
 };
 
-export type KeyAction = { [key: string]: boolean };
+export type KeyState = { [key: string]: boolean };
+
+// export type KeySound = { [key: string]: Sound };
 
 export type MessageConfigurator = {
     font?: string;
@@ -36,11 +46,23 @@ export type MessageConfigurator = {
         | 'bottom';
 };
 
+export type MusicConfig = {
+    files: string[];
+    volume: number;
+};
+
 export type ShapePoint = {
     radius: number;
     angle: number;
     index: number;
     curve: boolean;
+};
+
+export type SoundEffectConfig = {
+    file: string;
+    volume?: number;
+    loop?: boolean;
+    maxStreams?: number;
 };
 
 export type SpriteShape = {
