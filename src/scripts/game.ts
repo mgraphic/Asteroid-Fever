@@ -2,6 +2,7 @@ import '../styles/index.scss';
 
 import { Asteroid } from './sprites/asteroid';
 import {
+    AsteroidBuildRequest,
     AsteroidCounter,
     astroidLevelType,
     CanvasContext,
@@ -24,42 +25,7 @@ import { Sound } from './sound';
 import { Music } from './sprites/music';
 
 export class Game {
-    // Default values:
-    private lives: number = 3;
-    private score: number = 0;
-    private highScore: number = 0;
-    private level: number = 1;
-    private transitioning: boolean = false;
-    private asteroidSpeed: number = Config.ASTEROID_SPEED;
-
-    // Element containers:
-    private gameBoardElement: HTMLElement;
-    private canvasElement: HTMLCanvasElement;
-    private currentScoreElement: HTMLElement;
-    private highScoreElement: HTMLElement;
-    private levelElement: HTMLElement;
-    private livesElement: HTMLElement;
-
     // Game state:
-    private ship: Ship;
-    private canvas: CanvasContext;
-    private bullets: Bullet[] = [];
-    private asteroids: Asteroid[] = [];
-    private explosions: Explosion[] = [];
-    private messages: Message[] = [];
-    private music: Music;
-    private localStorage: Storage = window.localStorage;
-    private demoTimers: NodeJS.Timeout[] = [];
-    private soundEffects: { [key: string]: Sound };
-    private sounds: KeyState = {
-        soundOn: true,
-        musicOn: true,
-    };
-    private asteroidCounter: AsteroidCounter = {
-        firstLevel: Config.GAME_ASTEROIDS_COUNT,
-        total: 0,
-        remaining: 0,
-    };
     private actions: KeyState = {
         RotateLeft: false,
         RotateRight: false,
@@ -67,19 +33,48 @@ export class Game {
         Pause: false,
         Demo: true,
     };
+    private asteroidCounter: AsteroidCounter = {
+        firstLevel: Config.GAME_ASTEROIDS_COUNT,
+        total: 0,
+        remaining: 0,
+    };
+    private asteroids: Asteroid[] = [];
+    private bullets: Bullet[] = [];
+    private canvas: CanvasContext;
+    private demoTimers: NodeJS.Timeout[] = [];
+    private explosions: Explosion[] = [];
+    private level: number = 1;
+    private localStorage: Storage = window.localStorage;
+    private messages: Message[] = [];
+    private music: Music;
+    private score: number = 0;
+    private ship: Ship;
+    private transitioning: boolean = false;
+    private soundEffects: { [key: string]: Sound };
+    private sounds: KeyState = {
+        soundOn: true,
+        musicOn: true,
+    };
 
-    // Setters & getters:
-    private _soundEnabled: boolean = true;
-    public get soundEnabled(): boolean {
-        return this._soundEnabled;
-    }
-    public set soundEnabled(enabled: boolean) {
-        this._soundEnabled = enabled;
-    }
+    // Default values:
+    private asteroidSpeed: number = Config.ASTEROID_SPEED;
+    private highScore: number = Number(
+        this.localStorage.getItem('highScore') ?? 0
+    );
+    private lives: number = Config.GAME_NUMBER_OF_LIVES;
 
+    // Element containers:
+    private canvasElement: HTMLCanvasElement;
+    private currentScoreElement: HTMLElement;
+    private gameBoardElement: HTMLElement;
+    private highScoreElement: HTMLElement;
+    private levelElement: HTMLElement;
+    private livesElement: HTMLElement;
+
+    // Public methods:
     public constructor(gameBoard: HTMLElement) {
         this.gameBoardElement = gameBoard;
-        this.highScore = Number(this.localStorage.getItem('highScore') ?? 0);
+        // this.highScore = Number(this.localStorage.getItem('highScore') ?? 0);
     }
 
     public run(): void {
@@ -171,6 +166,7 @@ export class Game {
         this.animate();
     }
 
+    // Private methods:
     private reset(): void {
         this.asteroidCounter.firstLevel = Config.GAME_ASTEROIDS_COUNT;
         this.asteroidSpeed = Config.ASTEROID_SPEED;
@@ -379,29 +375,41 @@ export class Game {
             this.messages = [];
         }
 
-        const asteroidsTotal: number =
-            this.asteroidCounter.firstLevel *
-            (Math.pow(2, Object.keys(astroidLevelType).length / 2) - 1);
-        this.asteroidCounter.total = asteroidsTotal;
+        // get asteroids build request array
+        const buildRequest: AsteroidBuildRequest[] =
+            this.getAsteroidBuildRequest();
 
-        this.asteroidCounter.remaining = asteroidsTotal;
+        // count total pieces of asteroids to destroy
+        let piecesCounter: number = 0;
 
-        for (let i = 0; i < this.asteroidCounter.firstLevel; i++) {
-            let allClear: boolean;
-            let randomCoordinates: Coordinates2D;
+        // loops through build request to total number of pieces
+        buildRequest.forEach((item: AsteroidBuildRequest): void => {
+            piecesCounter +=
+                item.count * Game.asteroidPieceCountByLevel(item.level);
+        });
 
-            while (!allClear) {
-                randomCoordinates = getRandomCanvasCoordinates(this.canvas);
-                allClear = !radiusCollision(
-                    randomCoordinates,
-                    Config.ASTEROID_RADIUS,
-                    this.ship.getCenterPosition(),
-                    Config.SHIP_MANIFEST_RADIUS
-                );
+        this.asteroidCounter.total = piecesCounter;
+        this.asteroidCounter.remaining = piecesCounter;
+
+        // fullfill asteroids request order
+        buildRequest.forEach((item: AsteroidBuildRequest): void => {
+            for (let i = 0; i < item.count; i++) {
+                let allClear: boolean;
+                let randomCoordinates: Coordinates2D;
+
+                while (!allClear) {
+                    randomCoordinates = getRandomCanvasCoordinates(this.canvas);
+                    allClear = !radiusCollision(
+                        randomCoordinates,
+                        Config.ASTEROID_RADIUS,
+                        this.ship.getCenterPosition(),
+                        Config.SHIP_MANIFEST_RADIUS
+                    );
+                }
+
+                this.pushAsteroid(randomCoordinates, item.level);
             }
-
-            this.pushAsteroid(randomCoordinates);
-        }
+        });
 
         this.setTempo();
         this.transitioning = false;
@@ -412,8 +420,8 @@ export class Game {
 
         if (!this.actions.Demo) {
             this.level++;
-            this.asteroidCounter.firstLevel++;
-            this.asteroidSpeed += Config.ASTEROID_SPEED_INCREASE;
+            this.asteroidCounter.firstLevel += Config.GAME_ASTEROIDS_COUNT_GROW;
+            this.asteroidSpeed += Config.GAME_ASTEROID_SPEED_INCREASE;
 
             this.messages.push(
                 new Message(
@@ -431,6 +439,32 @@ export class Game {
         }
 
         this.startLevel();
+    }
+
+    private getAsteroidBuildRequest(): AsteroidBuildRequest[] {
+        const numberOfLevels: number = Object.keys(astroidLevelType).length / 2;
+        const firstLevel: number = Math.floor(this.asteroidCounter.firstLevel);
+        const remaining: number = Math.floor(
+            (this.asteroidCounter.firstLevel - firstLevel) /
+                (1 / numberOfLevels)
+        );
+        const remainingLevel: astroidLevelType =
+            astroidLevelType[astroidLevelType[numberOfLevels - remaining]];
+
+        const asteroids: AsteroidBuildRequest[] = [];
+
+        if (firstLevel > 0) {
+            asteroids.push({
+                level: astroidLevelType.LEVEL1,
+                count: firstLevel,
+            });
+        }
+
+        if (remaining > 0) {
+            asteroids.push({ level: remainingLevel, count: 1 });
+        }
+
+        return asteroids;
     }
 
     private fireBullet(): void {
@@ -744,5 +778,11 @@ export class Game {
         if (Config.KEYS_GAME_SOUND.includes($event.code)) {
             this.toggleSound();
         }
+    }
+
+    private static asteroidPieceCountByLevel(level: astroidLevelType): number {
+        return (
+            Math.pow(2, Object.keys(astroidLevelType).length / 2 - level) - 1
+        );
     }
 }

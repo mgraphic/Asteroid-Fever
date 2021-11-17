@@ -6,6 +6,11 @@ export enum astroidLevelType {
     LEVEL3,
 }
 
+export type AsteroidBuildRequest = {
+    level: astroidLevelType;
+    count: number;
+};
+
 export type AsteroidCounter = {
     firstLevel: number;
     total: number;
@@ -24,8 +29,6 @@ export type Coordinates2D = {
 };
 
 export type KeyState = { [key: string]: boolean };
-
-// export type KeySound = { [key: string]: Sound };
 
 export type MessageConfigurator = {
     font?: string;

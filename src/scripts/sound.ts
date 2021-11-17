@@ -1,7 +1,7 @@
 import { KeyState, SoundEffectConfig } from './models';
 
 export class Sound {
-    private static defaultConfig: Omit<SoundEffectConfig, 'file'> = {
+    private static DEFAULT_CONFIG: Omit<SoundEffectConfig, 'file'> = {
         maxStreams: 1,
         volume: 1,
         loop: false,
@@ -14,7 +14,7 @@ export class Sound {
         private state: KeyState,
         private config: SoundEffectConfig
     ) {
-        this.config = Object.assign({}, Sound.defaultConfig, config);
+        this.config = Object.assign({}, Sound.DEFAULT_CONFIG, config);
         this.streams = Array(this.config.maxStreams)
             .fill(null)
             .map((): HTMLAudioElement => {

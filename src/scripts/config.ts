@@ -20,7 +20,6 @@ export class Config {
 
     // Asteroid settings
     public static ASTEROID_SPEED: number = 2;
-    public static ASTEROID_SPEED_INCREASE: number = 0.02;
     public static ASTEROID_NUMBER_SIDES: number = 6;
     public static ASTEROID_STROKE_COLOR: string = '#fff';
     public static ASTEROID_RANDOM_ANGLE_OFFSET_MIN: number = -0.1;
@@ -28,7 +27,11 @@ export class Config {
     public static ASTEROID_RADIUS: number = 50;
     public static ASTEROID_BREAKUP_OFFSET: number = 5;
 
+    // Game default settings
     public static GAME_ASTEROIDS_COUNT: number = 8;
+    public static GAME_ASTEROIDS_COUNT_GROW: number = 0.75;
+    public static GAME_ASTEROID_SPEED_INCREASE: number = 0.02;
+    public static GAME_NUMBER_OF_LIVES: number = 3;
 
     // Score settings
     public static SCORE_ASTEROID_BY_BULLET: number = 20;
@@ -76,6 +79,7 @@ export class Config {
     public static KEYS_GAME_PAUSE: string[] = ['KeyP'];
     public static KEYS_GAME_SOUND: string[] = ['KeyL'];
 
+    // Music settings
     public static MUSIC_TEMPO: number = 1;
     public static MUSIC_MAX_BPS: number = 3;
     public static MUSIC_CONFIG: MusicConfig = {
@@ -83,6 +87,7 @@ export class Config {
         volume: 1,
     };
 
+    // Sound effect settings
     public static SOUND_EXPLODE: SoundEffectConfig = {
         file: 'public/sounds/explode.m4a',
         maxStreams: 1,

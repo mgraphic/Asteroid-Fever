@@ -4,7 +4,7 @@ import { getCenterCoordinatesOfCanvas, getRandomInRange } from '../utils';
 import { AbstractSprite } from './abstract-sprite';
 
 export class Ship extends AbstractSprite {
-    debug = false;
+    private debug: boolean = false;
 
     protected centerPosition: Coordinates2D;
     private nosePosition: Coordinates2D;
