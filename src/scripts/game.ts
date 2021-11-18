@@ -50,6 +50,7 @@ export class Game {
     private messages: Message[] = [];
     private music: Music;
     private score: number = 0;
+    private lastReward: number = 0;
     private ship: Ship;
     private transitioning: boolean = false;
     private soundEffects: { [key: string]: Sound };
@@ -76,7 +77,6 @@ export class Game {
     // Public methods:
     public constructor(gameBoard: HTMLElement) {
         this.gameBoardElement = gameBoard;
-        // this.highScore = Number(this.localStorage.getItem('highScore') ?? 0);
     }
 
     public run(): void {
@@ -174,6 +174,7 @@ export class Game {
         this.asteroidSpeed = Config.ASTEROID_SPEED;
         this.lives = 3;
         this.score = 0;
+        this.lastReward = 0;
         this.level = 1;
         this.bullets = [];
         this.asteroids = [];
@@ -211,13 +212,12 @@ export class Game {
     }
 
     private endLife(): void {
+        this.ship.hide();
         this.soundEffects.thrust.volumeOff();
-
+        this.soundEffects.explode.play();
         this.explosions.push(
             new Explosion(this.canvas, this.ship.getCenterPosition())
         );
-
-        this.soundEffects.explode.play();
 
         if (!this.actions.Demo) {
             this.lives--;
@@ -474,6 +474,7 @@ export class Game {
                     this.ship.getNosePosition()
                 )
             );
+
             this.setScore(Config.SCORE_FIRE_BULLET);
             this.soundEffects.laser.play();
         }
@@ -485,6 +486,19 @@ export class Game {
         }
 
         this.score += score;
+
+        // check for extra life reward
+        const reward: number = this.score - this.lastReward;
+
+        if (
+            this.lives < Config.GAME_MAX_LIVES &&
+            reward >= Config.GAME_EXTRA_LIFE_REWARD
+        ) {
+            this.lives++;
+            this.refreshLivesDisplay();
+            this.lastReward = this.score;
+        }
+
         this.currentScoreElement.innerHTML = String(this.score);
 
         if (this.score > this.highScore) {

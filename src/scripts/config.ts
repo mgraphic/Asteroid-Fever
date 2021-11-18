@@ -32,6 +32,8 @@ export class Config {
     public static GAME_ASTEROIDS_COUNT_GROW: number = 0.75;
     public static GAME_ASTEROID_SPEED_INCREASE: number = 0.02;
     public static GAME_NUMBER_OF_LIVES: number = 3;
+    public static GAME_EXTRA_LIFE_REWARD: number = 3500;
+    public static GAME_MAX_LIVES: number = 6;
 
     // Score settings
     public static SCORE_ASTEROID_BY_BULLET: number = 20;
