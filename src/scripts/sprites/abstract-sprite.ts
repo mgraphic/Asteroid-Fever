@@ -5,18 +5,12 @@ export abstract class AbstractSprite {
     protected abstract angle: number;
     protected abstract canvas: CanvasContext;
 
-    private _radians: number;
+    protected get radians(): number {
+        return (this.angle / Math.PI) * 180;
+    }
 
     public abstract animate(): void;
     public abstract render(): void;
-
-    protected get radians(): number {
-        if (this._radians !== undefined) {
-            return this._radians;
-        }
-
-        return (this.angle / Math.PI) * 180;
-    }
 
     public getAngle(): number {
         return this.angle;

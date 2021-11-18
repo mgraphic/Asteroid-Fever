@@ -1,5 +1,5 @@
 import { Config } from '../config';
-import { astroidLevelType, CanvasContext, Coordinates2D } from '../models';
+import { AsteroidLevelTypes, CanvasContext, Coordinates2D } from '../models';
 import { getRandomInRange } from '../utils';
 import { AbstractSprite } from './abstract-sprite';
 
@@ -11,19 +11,19 @@ export class Asteroid extends AbstractSprite {
     constructor(
         protected canvas: CanvasContext,
         protected centerPosition: Coordinates2D,
-        private level: astroidLevelType,
+        private level: AsteroidLevelTypes,
         private speed: number
     ) {
         super();
 
         switch (this.level) {
-            case astroidLevelType.LEVEL3:
+            case AsteroidLevelTypes.LEVEL3:
                 this.radius = Config.ASTEROID_RADIUS / 2 / 2;
                 break;
-            case astroidLevelType.LEVEL2:
+            case AsteroidLevelTypes.LEVEL2:
                 this.radius = Config.ASTEROID_RADIUS / 2;
                 break;
-            case astroidLevelType.LEVEL1:
+            case AsteroidLevelTypes.LEVEL1:
                 defualt: this.radius = Config.ASTEROID_RADIUS;
                 break;
         }
@@ -46,7 +46,7 @@ export class Asteroid extends AbstractSprite {
         }
     }
 
-    public getLevel(): astroidLevelType {
+    public getLevel(): AsteroidLevelTypes {
         return this.level;
     }
 

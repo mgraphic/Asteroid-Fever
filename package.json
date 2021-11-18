@@ -1,7 +1,7 @@
 {
-    "name": "bolierplate-game",
+    "name": "asteroid-fever",
     "version": "1.0.0",
-    "description": "A simplified game boilerplate",
+    "description": "Asteroid Fever Javascript Game",
     "scripts": {
         "build": "cross-env NODE_ENV=production webpack --config webpack/webpack.config.prod.js --colors",
         "start": "webpack-dev-server --open --config webpack/webpack.config.dev.js",
@@ -9,7 +9,7 @@
     },
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/mgraphic/Javascript-Game-Boilerplate"
+        "url": "git+https://github.com/mgraphic/Asteroid-Fever"
     },
     "keywords": [
         "webpack",
@@ -28,7 +28,6 @@
         "@babel/polyfill": "^7.10.4",
         "browser-detect": "^0.2.28",
         "core-js": "^3.6.5",
-        "deep-copy-ts": "^0.5.0",
         "minireset.css": "0.0.6"
     },
     "devDependencies": {

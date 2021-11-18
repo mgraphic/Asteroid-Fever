@@ -1,13 +1,17 @@
-// import { Sound } from './sound';
-
-export enum astroidLevelType {
+/**
+ * ENUMS:
+ */
+export enum AsteroidLevelTypes {
     LEVEL1,
     LEVEL2,
     LEVEL3,
 }
 
+/**
+ * TYPES:
+ */
 export type AsteroidBuildRequest = {
-    level: astroidLevelType;
+    level: AsteroidLevelTypes;
     count: number;
 };
 

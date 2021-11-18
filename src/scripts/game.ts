@@ -4,7 +4,7 @@ import { Asteroid } from './sprites/asteroid';
 import {
     AsteroidBuildRequest,
     AsteroidCounter,
-    astroidLevelType,
+    AsteroidLevelTypes,
     CanvasContext,
     Coordinates2D,
     KeyState,
@@ -12,11 +12,13 @@ import {
 import { Bullet } from './sprites/bullet';
 import { Config } from './config';
 import {
+    asteroidPieceCountByLevel,
     drawSegment,
     getCenterCoordinatesOfCanvas,
     getRandomCanvasCoordinates,
     getRandomInRange,
     radiusCollision,
+    wait,
 } from './utils';
 import { Explosion } from './sprites/explosion';
 import { Message } from './sprites/message';
@@ -324,10 +326,6 @@ export class Game {
         this.actions.Demo = false;
     }
 
-    private async wait(timer: number) {
-        return new Promise((resolve) => setTimeout(resolve, timer));
-    }
-
     private async startGame(): Promise<void> {
         if (!this.actions.Demo) {
             return;
@@ -352,7 +350,7 @@ export class Game {
                 'Game Over'
             )
         );
-        await this.wait(5000);
+        await wait(5000);
         this.messages = [];
         this.mute();
         this.startDemo();
@@ -371,7 +369,7 @@ export class Game {
                     'Get Ready'
                 )
             );
-            await this.wait(2000);
+            await wait(2000);
             this.messages = [];
         }
 
@@ -384,8 +382,7 @@ export class Game {
 
         // loops through build request to total number of pieces
         buildRequest.forEach((item: AsteroidBuildRequest): void => {
-            piecesCounter +=
-                item.count * Game.asteroidPieceCountByLevel(item.level);
+            piecesCounter += item.count * asteroidPieceCountByLevel(item.level);
         });
 
         this.asteroidCounter.total = piecesCounter;
@@ -434,7 +431,7 @@ export class Game {
                     ]
                 )
             );
-            await this.wait(2000);
+            await wait(2000);
             this.messages = [];
         }
 
@@ -442,20 +439,21 @@ export class Game {
     }
 
     private getAsteroidBuildRequest(): AsteroidBuildRequest[] {
-        const numberOfLevels: number = Object.keys(astroidLevelType).length / 2;
+        const numberOfLevels: number =
+            Object.keys(AsteroidLevelTypes).length / 2;
         const firstLevel: number = Math.floor(this.asteroidCounter.firstLevel);
         const remaining: number = Math.floor(
             (this.asteroidCounter.firstLevel - firstLevel) /
                 (1 / numberOfLevels)
         );
-        const remainingLevel: astroidLevelType =
-            astroidLevelType[astroidLevelType[numberOfLevels - remaining]];
+        const remainingLevel: AsteroidLevelTypes =
+            AsteroidLevelTypes[AsteroidLevelTypes[numberOfLevels - remaining]];
 
         const asteroids: AsteroidBuildRequest[] = [];
 
         if (firstLevel > 0) {
             asteroids.push({
-                level: astroidLevelType.LEVEL1,
+                level: AsteroidLevelTypes.LEVEL1,
                 count: firstLevel,
             });
         }
@@ -676,15 +674,15 @@ export class Game {
     private breakupAsteroid(asteroid: Asteroid): void {
         const { x, y }: Coordinates2D = asteroid.getCenterPosition();
 
-        let nextLevel: astroidLevelType;
+        let nextLevel: AsteroidLevelTypes;
 
         switch (asteroid.getLevel()) {
-            case astroidLevelType.LEVEL1:
-                nextLevel = astroidLevelType.LEVEL2;
+            case AsteroidLevelTypes.LEVEL1:
+                nextLevel = AsteroidLevelTypes.LEVEL2;
                 break;
 
-            case astroidLevelType.LEVEL2:
-                nextLevel = astroidLevelType.LEVEL3;
+            case AsteroidLevelTypes.LEVEL2:
+                nextLevel = AsteroidLevelTypes.LEVEL3;
                 break;
 
             default:
@@ -716,11 +714,11 @@ export class Game {
 
     private pushAsteroid(
         coordinates?: Coordinates2D,
-        level?: astroidLevelType
+        level?: AsteroidLevelTypes
     ): void {
         coordinates = coordinates || getRandomCanvasCoordinates(this.canvas);
 
-        level = level || astroidLevelType.LEVEL1;
+        level = level || AsteroidLevelTypes.LEVEL1;
 
         this.asteroids.push(
             new Asteroid(this.canvas, coordinates, level, this.asteroidSpeed)
@@ -778,11 +776,5 @@ export class Game {
         if (Config.KEYS_GAME_SOUND.includes($event.code)) {
             this.toggleSound();
         }
-    }
-
-    private static asteroidPieceCountByLevel(level: astroidLevelType): number {
-        return (
-            Math.pow(2, Object.keys(astroidLevelType).length / 2 - level) - 1
-        );
     }
 }

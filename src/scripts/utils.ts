@@ -1,4 +1,8 @@
-import { CanvasContext, Coordinates2D } from './models';
+import { AsteroidLevelTypes, CanvasContext, Coordinates2D } from './models';
+
+export function asteroidPieceCountByLevel(level: AsteroidLevelTypes): number {
+    return Math.pow(2, Object.keys(AsteroidLevelTypes).length / 2 - level) - 1;
+}
 
 export function drawSegment(
     className: string | string[],
@@ -61,4 +65,8 @@ export function valueOfPercent(
     percentage: number
 ): number {
     return (originalValue * percentage) / 100;
+}
+
+export async function wait(timer: number) {
+    return new Promise((resolve) => setTimeout(resolve, timer));
 }
