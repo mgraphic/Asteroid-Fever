@@ -16,7 +16,7 @@ export class Config {
     public static BULLET_WIDTH: number = 4;
     public static BULLET_HEIGHT: number = 5;
     public static BULLET_REPEAT_EDGES: boolean = true;
-    public static BULLET_CONTINUE_XY_PERCENT: number = 10;
+    public static BULLET_CONTINUE_XY_PERCENT: number = 60;
 
     // Asteroid settings
     public static ASTEROID_SPEED: number = 2;
