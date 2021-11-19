@@ -1,6 +1,6 @@
 import { Config } from '../config';
 import { CanvasContext, Coordinates2D } from '../models';
-import { isBetween, radiusCollision, valueOfPercent } from '../utils';
+import { valueOfPercent } from '../utils';
 import { AbstractSprite } from './abstract-sprite';
 
 export class Bullet extends AbstractSprite {
@@ -50,14 +50,21 @@ export class Bullet extends AbstractSprite {
             if (y > this.canvas.height) {
                 y = 0;
             }
+        }
 
-            if (this.distanceTracker.x >= valueOfPercent(this.canvas.width, Config.BULLET_CONTINUE_XY_PERCENT) || this.distanceTracker.y >= valueOfPercent(this.canvas.height, Config.BULLET_CONTINUE_XY_PERCENT)) {
-                this.show = false;
-            }    
-        } else {
-            if (Math.abs(x) > this.canvas.width || Math.abs(y) > this.canvas.height) {
-                this.show = false;
-            }
+        if (
+            this.distanceTracker.x >=
+                valueOfPercent(
+                    this.canvas.width,
+                    Config.BULLET_MAX_XY_DISTANCE_PERCENT
+                ) ||
+            this.distanceTracker.y >=
+                valueOfPercent(
+                    this.canvas.height,
+                    Config.BULLET_MAX_XY_DISTANCE_PERCENT
+                )
+        ) {
+            this.show = false;
         }
 
         this.centerPosition = { x, y };

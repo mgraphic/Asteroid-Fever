@@ -22,10 +22,6 @@ export function drawSegment(
     return gridElement;
 }
 
-export function isBetween(value: number, min: number, max: number): boolean {
-    return value >= min && value <= max;
-}
-
 export function getCenterCoordinatesOfCanvas(
     canvas: CanvasContext
 ): Coordinates2D {
@@ -67,6 +63,6 @@ export function valueOfPercent(
     return (originalValue * percentage) / 100;
 }
 
-export async function wait(timer: number) {
+export async function wait(timer: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, timer));
 }
