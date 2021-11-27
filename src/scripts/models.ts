@@ -61,7 +61,7 @@ export type MusicConfig = {
 export type ShapePoint = {
     radius: number;
     angle: number;
-    index: number;
+    index?: number;
     curve: boolean;
 };
 

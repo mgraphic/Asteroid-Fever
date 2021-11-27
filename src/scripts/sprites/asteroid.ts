@@ -54,7 +54,7 @@ export class Asteroid extends AbstractSprite {
         return this.radius;
     }
 
-    public animate(): void {
+    public move(): void {
         let { x, y }: Coordinates2D = this.centerPosition;
 
         x -= Math.cos(this.radians) * this.speed;

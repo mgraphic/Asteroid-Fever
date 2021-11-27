@@ -19,7 +19,7 @@ export class Bullet extends AbstractSprite {
         return !this.show;
     }
 
-    public animate(): void {
+    public move(): void {
         let { x, y }: Coordinates2D = this.centerPosition;
 
         const velocity: Coordinates2D = {

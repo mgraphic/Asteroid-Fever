@@ -9,8 +9,13 @@ export abstract class AbstractSprite {
         return (this.angle / Math.PI) * 180;
     }
 
-    public abstract animate(): void;
+    public abstract move(): void;
     public abstract render(): void;
+
+    public animate(): void {
+        this.render();
+        this.move();
+    }
 
     public getAngle(): number {
         return this.angle;

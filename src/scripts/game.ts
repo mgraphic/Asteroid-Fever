@@ -572,12 +572,10 @@ export class Game {
             this.ship.rotate(1);
         }
 
-        this.ship.render();
         this.ship.animate();
 
         if (this.bullets.length > 0) {
             this.bullets.forEach((bullet: Bullet, idx: number): void => {
-                bullet.render();
                 bullet.animate();
                 if (bullet.isHidden()) {
                     this.bullets.splice(idx, 1);
@@ -587,7 +585,6 @@ export class Game {
 
         if (this.asteroids.length > 0) {
             this.asteroids.forEach((asteroid: Asteroid): void => {
-                asteroid.render();
                 asteroid.animate();
             });
         }
@@ -595,7 +592,6 @@ export class Game {
         if (this.explosions.length > 0) {
             this.explosions.forEach(
                 (explosion: Explosion, idx: number): void => {
-                    explosion.render();
                     explosion.animate();
                     if (explosion.isHidden()) {
                         this.explosions.splice(idx, 1);
@@ -606,7 +602,6 @@ export class Game {
 
         if (this.messages.length > 0) {
             this.messages.forEach((message: Message): void => {
-                message.render();
                 message.animate();
             });
         }
@@ -680,7 +675,7 @@ export class Game {
             this.endLevel();
         }
 
-        this.music.render();
+        this.music.animate();
 
         requestAnimationFrame(this.animate.bind(this));
     }

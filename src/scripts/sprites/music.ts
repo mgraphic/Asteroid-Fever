@@ -20,7 +20,7 @@ export class Music {
         );
     }
 
-    public render(): void {
+    public animate(): void {
         if (this.beat === 0) {
             this.play();
             this.beat = Math.ceil(this.tempo * Music.FPS);

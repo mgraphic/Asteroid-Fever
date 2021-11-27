@@ -71,7 +71,7 @@ export class Ship extends AbstractSprite {
         this.hidden = true;
     }
 
-    public animate(): void {
+    public move(): void {
         if (this.hidden) {
             return;
         }
