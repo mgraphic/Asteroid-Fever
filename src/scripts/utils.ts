@@ -22,6 +22,24 @@ export function drawSegment(
     return gridElement;
 }
 
+export function getAngleOfTwoCoordinates(
+    coord1: Coordinates2D,
+    coord2: Coordinates2D
+): number {
+    const diff: Coordinates2D = {
+        x: coord2.x - coord1.x,
+        y: coord2.y - coord1.y,
+    };
+
+    let theta: number = Math.atan2(diff.y, diff.x);
+    theta *= 180 / Math.PI;
+    if (theta < 0) {
+        theta = 360 + theta;
+    }
+
+    return theta;
+}
+
 export function getCenterCoordinatesOfCanvas(
     canvas: CanvasContext
 ): Coordinates2D {

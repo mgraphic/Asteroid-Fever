@@ -25,6 +25,7 @@ import { Message } from './sprites/message';
 import { Ship } from './sprites/ship';
 import { Sound } from './sound';
 import { Music } from './sprites/music';
+import { Enemy } from './sprites/enemy';
 
 export class Game {
     // Game state:
@@ -52,6 +53,7 @@ export class Game {
     private score: number = 0;
     private lastReward: number = 0;
     private ship: Ship;
+    private enemyShip: Enemy;
     private transitioning: boolean = false;
     private soundEffects: { [key: string]: Sound };
     private sounds: KeyState = {
@@ -163,12 +165,48 @@ export class Game {
         this.music = new Music(this.sounds);
 
         this.ship = new Ship(this.canvas);
+        this.enemyShip = new Enemy(this.canvas, this.ship);
         this.ship.hide();
         this.startDemo();
+        this.randomizeEnemyShip();
         this.animate();
     }
 
     // Private methods:
+    private randomizeEnemyShip(): void {
+        // {
+        //     const loop: () => void = (): void => {
+        //         const timer: number = Math.round(getRandomInRange(1000, 5000));
+        //         this.demoTimers.push(
+        //             setTimeout((): void => {
+        //                 this.toggleThrust();
+        //                 loop();
+        //             }, timer)
+        //         );
+        //     };
+        //     loop();
+        // }
+
+        // const toggleShip: () => void = (): void => {};
+        const toggleShip: () => void = (): void => {
+            const timer: number = Math.round(getRandomInRange(1000, 5000));
+            setTimeout((): void => {
+                this.enemyShip.start();
+                toggleShip();
+                // if (!this.enemyShip) {
+                //     // this.enemyShip = new Enemy(
+                //     //     this.canvas,
+                //     //     this.ship
+                //     //     // getCenterCoordinatesOfCanvas(this.canvas),
+                //     //     // 0
+                //     // );
+                // }
+            }, timer);
+        };
+
+        toggleShip();
+    }
+
     private reset(): void {
         this.asteroidCounter.firstLevel = Config.GAME_ASTEROIDS_COUNT;
         this.asteroidSpeed = Config.ASTEROID_SPEED;
@@ -214,10 +252,7 @@ export class Game {
     private endLife(): void {
         this.ship.hide();
         this.soundEffects.thrust.volumeOff();
-        this.soundEffects.explode.play();
-        this.explosions.push(
-            new Explosion(this.canvas, this.ship.getCenterPosition())
-        );
+        this.explode(this.ship.getCenterPosition());
 
         if (!this.actions.Demo) {
             this.lives--;
@@ -246,74 +281,75 @@ export class Game {
         this.mute();
         this.asteroids = [];
 
-        this.messages.push(
-            new Message(
-                this.canvas,
-                getCenterCoordinatesOfCanvas(this.canvas),
-                'Asteroid Fever',
-                {
-                    blink: !true,
-                    scroll: true,
-                    scrollSpeed: 2,
-                    fillStyle: null,
-                    strokeStyle: '#fff',
-                }
-            )
-        );
+        // this.messages.push(
+        //     new Message(
+        //         this.canvas,
+        //         getCenterCoordinatesOfCanvas(this.canvas),
+        //         'Asteroid Fever',
+        //         {
+        //             blink: !true,
+        //             scroll: true,
+        //             scrollSpeed: 2,
+        //             fillStyle: null,
+        //             strokeStyle: '#fff',
+        //         }
+        //     )
+        // );
 
         // move ship
-        {
-            const loop: () => void = (): void => {
-                const timer: number = Math.round(getRandomInRange(1000, 5000));
-                this.demoTimers.push(
-                    setTimeout((): void => {
-                        this.toggleThrust();
-                        loop();
-                    }, timer)
-                );
-            };
-            loop();
-        }
+        // {
+        //     const loop: () => void = (): void => {
+        //         const timer: number = Math.round(getRandomInRange(1000, 5000));
+        //         this.demoTimers.push(
+        //             setTimeout((): void => {
+        //                 this.toggleThrust();
+        //                 loop();
+        //             }, timer)
+        //         );
+        //     };
+        //     loop();
+        // }
 
         // rotate ship
-        {
-            const loop: () => void = (): void => {
-                const timer: number = Math.round(getRandomInRange(1000, 5000));
-                const dir = Math.round(getRandomInRange(-1, 1));
-                this.demoTimers.push(
-                    setTimeout((): void => {
-                        if (dir < 0) {
-                            this.actions.RotateLeft = true;
-                            this.actions.RotateRight = false;
-                        } else if (dir > 0) {
-                            this.actions.RotateLeft = false;
-                            this.actions.RotateRight = true;
-                        } else {
-                            this.actions.RotateLeft = false;
-                            this.actions.RotateRight = false;
-                        }
-                        loop();
-                    }, timer)
-                );
-            };
-            loop();
-        }
+        // {
+        //     const loop: () => void = (): void => {
+        //         const timer: number = Math.round(getRandomInRange(1000, 5000));
+        //         const dir = Math.round(getRandomInRange(-1, 1));
+        //         this.demoTimers.push(
+        //             setTimeout((): void => {
+        //                 if (dir < 0) {
+        //                     this.actions.RotateLeft = true;
+        //                     this.actions.RotateRight = false;
+        //                 } else if (dir > 0) {
+        //                     this.actions.RotateLeft = false;
+        //                     this.actions.RotateRight = true;
+        //                 } else {
+        //                     this.actions.RotateLeft = false;
+        //                     this.actions.RotateRight = false;
+        //                 }
+        //                 loop();
+        //             }, timer)
+        //         );
+        //     };
+        //     loop();
+        // }
 
         // fire bullets
-        {
-            const loop: () => void = (): void => {
-                const timer: number = Math.round(getRandomInRange(120, 500));
-                this.demoTimers.push(
-                    setTimeout((): void => {
-                        this.fireBullet();
-                        loop();
-                    }, timer)
-                );
-            };
-            loop();
-        }
+        // {
+        //     const loop: () => void = (): void => {
+        //         const timer: number = Math.round(getRandomInRange(120, 500));
+        //         this.demoTimers.push(
+        //             setTimeout((): void => {
+        //                 this.fireBullet();
+        //                 loop();
+        //             }, timer)
+        //         );
+        //     };
+        //     loop();
+        // }
 
-        this.startLevel();
+        // this.startLevel();
+        this.transitioning = true;
     }
 
     private endDemo(): void {
@@ -480,6 +516,11 @@ export class Game {
         }
     }
 
+    private explode(centerPosition: Coordinates2D): void {
+        this.soundEffects.explode.play();
+        this.explosions.push(new Explosion(this.canvas, centerPosition));
+    }
+
     private setScore(score: number): void {
         if (this.actions.Demo) {
             return;
@@ -573,6 +614,10 @@ export class Game {
         }
 
         this.ship.animate();
+
+        // if (this.enemyShip) {
+        this.enemyShip.animate();
+        // }
 
         if (this.bullets.length > 0) {
             this.bullets.forEach((bullet: Bullet, idx: number): void => {
