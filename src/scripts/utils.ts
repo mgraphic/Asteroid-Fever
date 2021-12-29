@@ -1,4 +1,9 @@
-import { AsteroidLevelTypes, CanvasContext, Coordinates2D } from './models';
+import {
+    AsteroidLevelTypes,
+    CanvasContext,
+    Coordinates2D,
+    MinMax,
+} from './models';
 
 export function asteroidPieceCountByLevel(level: AsteroidLevelTypes): number {
     return Math.pow(2, Object.keys(AsteroidLevelTypes).length / 2 - level) - 1;
@@ -22,6 +27,26 @@ export function drawSegment(
     return gridElement;
 }
 
+export function getAngleOfTwoCoordinates(
+    coord1: Coordinates2D,
+    coord2: Coordinates2D
+): number {
+    const angleBase: number = 0.109666;
+    const diff: Coordinates2D = {
+        x: coord1.x - coord2.x,
+        y: coord1.y - coord2.y,
+    };
+
+    let theta: number = Math.atan2(diff.y, diff.x);
+    theta *= 180 / Math.PI;
+
+    if (theta < 0) {
+        theta = 360 + theta;
+    }
+
+    return angleBase / (360 / theta);
+}
+
 export function getCenterCoordinatesOfCanvas(
     canvas: CanvasContext
 ): Coordinates2D {
@@ -42,6 +67,26 @@ export function getRandomCanvasCoordinates(
 
 export function getRandomInRange(min: number, max: number): number {
     return Math.random() * (max - min) + min;
+}
+
+export function minMaxAdjuster(
+    minMax: MinMax,
+    adjustBy: number,
+    allowableMinMax: MinMax = { min: 100, max: 1100 }
+): MinMax {
+    let { min, max }: MinMax = minMax;
+
+    min += adjustBy;
+    if (min < allowableMinMax.min) {
+        min = allowableMinMax.min;
+    }
+
+    max += adjustBy;
+    if (max < allowableMinMax.max) {
+        max = allowableMinMax.max;
+    }
+
+    return { min, max };
 }
 
 export function radiusCollision(

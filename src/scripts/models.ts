@@ -7,6 +7,11 @@ export enum AsteroidLevelTypes {
     LEVEL3,
 }
 
+export enum ShipSource {
+    PLAYER,
+    ENEMY,
+}
+
 /**
  * TYPES:
  */
@@ -51,6 +56,11 @@ export type MessageConfigurator = {
         | 'alphabetic'
         | 'ideographic'
         | 'bottom';
+};
+
+export type MinMax = {
+    min: number;
+    max: number;
 };
 
 export type MusicConfig = {

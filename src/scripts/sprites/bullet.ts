@@ -1,7 +1,8 @@
-import { Config } from '../config';
-import { CanvasContext, Coordinates2D } from '../models';
-import { valueOfPercent } from '../utils';
 import { AbstractSprite } from './abstract-sprite';
+
+import { Config } from '../config';
+import { ShipSource, CanvasContext, Coordinates2D } from '../models';
+import { valueOfPercent } from '../utils';
 
 export class Bullet extends AbstractSprite {
     private distanceTracker: Coordinates2D = { x: 0, y: 0 };
@@ -10,13 +11,18 @@ export class Bullet extends AbstractSprite {
     constructor(
         protected canvas: CanvasContext,
         protected angle: number,
-        protected centerPosition: Coordinates2D
+        protected centerPosition: Coordinates2D,
+        private source: ShipSource
     ) {
         super();
     }
 
     public isHidden(): boolean {
         return !this.show;
+    }
+
+    public getSource(): ShipSource {
+        return this.source;
     }
 
     public move(): void {
