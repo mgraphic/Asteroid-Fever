@@ -20,7 +20,7 @@ export class Music {
         );
     }
 
-    public render(): void {
+    public animate(): void {
         if (this.beat === 0) {
             this.play();
             this.beat = Math.ceil(this.tempo * Music.FPS);
@@ -55,7 +55,7 @@ export class Music {
         this.noteIndex = (this.noteIndex + 1) % this.musicNotes.length;
 
         if (this.state.musicOn) {
-            this.musicNotes[this.noteIndex].play();
+            this.musicNotes[this.noteIndex].play().catch((): void => undefined);
         }
     }
 }

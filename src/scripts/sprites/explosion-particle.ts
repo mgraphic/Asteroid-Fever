@@ -22,7 +22,7 @@ export class ExplosionParticle extends AbstractSprite {
         return this.alpha <= 0;
     }
 
-    public animate(): void {
+    public move(): void {
         this.alpha -= 0.007;
         if (this.alpha < 0) {
             this.alpha = 0;

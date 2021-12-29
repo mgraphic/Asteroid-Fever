@@ -1,4 +1,4 @@
-import { MusicConfig, SoundEffectConfig } from './models';
+import { MinMax, MusicConfig, SoundEffectConfig } from './models';
 
 export class Config {
     // Ship settings
@@ -27,6 +27,23 @@ export class Config {
     public static ASTEROID_RADIUS: number = 50;
     public static ASTEROID_BREAKUP_OFFSET: number = 5;
 
+    // Enemy settings
+    public static ENEMY_SPEED: number = 1.3;
+    public static ENEMY_Y_ENTRY_POINT_PERCENTAGE: number = 33;
+    public static ENEMY_ROCKER_SPEED: number = 0.00018;
+    public static ENEMY_ROCKER_TILT: number = 0.002;
+    public static ENEMY_STROKE_COLOR: string = '#fff';
+    public static ENEMY_STROKE_LINE_WIDTH: number = 1;
+    public static ENEMY_GENERATION_FREQUENCY_MINMAX: MinMax = {
+        min: 30000,
+        max: 50000,
+    };
+    public static ENEMY_FIRE_FREQUENCY_MINMAX: MinMax = {
+        min: 1000,
+        max: 2200,
+    };
+    public static ENEMY_FREQUENCY_PROGRESSION_RATE: number = -85;
+
     // Game default settings
     public static GAME_ASTEROIDS_COUNT: number = 8;
     public static GAME_ASTEROIDS_COUNT_GROW: number = 0.75;
@@ -39,6 +56,7 @@ export class Config {
     public static SCORE_ASTEROID_BY_BULLET: number = 20;
     public static SCORE_ASTEROID_BY_COLLISION: number = 10;
     public static SCORE_FIRE_BULLET: number = -1;
+    public static SCORE_ENEMY_DESTROYED: number = 250;
 
     // Message settings
     public static MESSAGE_DEFAULT_FONT: string = 'Digital';
@@ -110,6 +128,12 @@ export class Config {
     };
     public static SOUND_THRUST: SoundEffectConfig = {
         file: 'public/sounds/thrust.m4a',
+        maxStreams: 1,
+        volume: 1,
+        loop: true,
+    };
+    public static SOUND_ALIEN: SoundEffectConfig = {
+        file: 'public/sounds/alien.m4a',
         maxStreams: 1,
         volume: 1,
         loop: true,

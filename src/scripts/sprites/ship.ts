@@ -10,7 +10,7 @@ export class Ship extends AbstractSprite {
     private nosePosition: Coordinates2D;
     private velocityPosition: Coordinates2D;
     private inMotion: boolean = false;
-    private radius: number = 15; //15;
+    private radius: number = 15;
     protected angle: number = 0;
     private hidden: boolean = false;
     private display: boolean = true;
@@ -71,7 +71,7 @@ export class Ship extends AbstractSprite {
         this.hidden = true;
     }
 
-    public animate(): void {
+    public move(): void {
         if (this.hidden) {
             return;
         }

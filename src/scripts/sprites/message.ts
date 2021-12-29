@@ -79,7 +79,7 @@ export class Message extends AbstractSprite {
         }
     }
 
-    public animate(): void {
+    public move(): void {
         if (this.config.scroll) {
             if (this.textWidth === undefined) {
                 this.canvas.context.font = this.config.font;

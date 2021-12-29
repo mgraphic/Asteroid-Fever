@@ -39,7 +39,7 @@ export class Explosion extends AbstractSprite {
         );
     }
 
-    public animate(): void {
+    public move(): void {
         // do nothing, render method doing everything
     }
 
@@ -49,7 +49,6 @@ export class Explosion extends AbstractSprite {
                 if (particle.isHidden()) {
                     this.particles.splice(idx, 1);
                 } else {
-                    particle.render();
                     particle.animate();
                 }
             }

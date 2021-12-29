@@ -8,15 +8,19 @@ import {
     CanvasContext,
     Coordinates2D,
     KeyState,
+    MinMax,
+    ShipSource,
 } from './models';
 import { Bullet } from './sprites/bullet';
 import { Config } from './config';
 import {
     asteroidPieceCountByLevel,
     drawSegment,
+    getAngleOfTwoCoordinates,
     getCenterCoordinatesOfCanvas,
     getRandomCanvasCoordinates,
     getRandomInRange,
+    minMaxAdjuster,
     radiusCollision,
     wait,
 } from './utils';
@@ -25,6 +29,7 @@ import { Message } from './sprites/message';
 import { Ship } from './sprites/ship';
 import { Sound } from './sound';
 import { Music } from './sprites/music';
+import { Enemy } from './sprites/enemy';
 
 export class Game {
     // Game state:
@@ -34,6 +39,7 @@ export class Game {
         Thrust: false,
         Pause: false,
         Demo: true,
+        Enemy: false,
     };
     private asteroidCounter: AsteroidCounter = {
         firstLevel: Config.GAME_ASTEROIDS_COUNT,
@@ -52,6 +58,7 @@ export class Game {
     private score: number = 0;
     private lastReward: number = 0;
     private ship: Ship;
+    private enemyShip: Enemy;
     private transitioning: boolean = false;
     private soundEffects: { [key: string]: Sound };
     private sounds: KeyState = {
@@ -65,6 +72,9 @@ export class Game {
         this.localStorage.getItem('highScore') ?? 0
     );
     private lives: number = Config.GAME_NUMBER_OF_LIVES;
+    private enemyGenerationFrequency: MinMax =
+        Config.ENEMY_GENERATION_FREQUENCY_MINMAX;
+    private enemyFireFrequency: MinMax = Config.ENEMY_FIRE_FREQUENCY_MINMAX;
 
     // Element containers:
     private canvasElement: HTMLCanvasElement;
@@ -158,20 +168,56 @@ export class Game {
             hit: new Sound(this.sounds, Config.SOUND_HIT),
             laser: new Sound(this.sounds, Config.SOUND_LASER),
             thrust: new Sound(this.sounds, Config.SOUND_THRUST),
+            alien: new Sound(this.sounds, Config.SOUND_ALIEN),
         };
 
         this.music = new Music(this.sounds);
 
         this.ship = new Ship(this.canvas);
+        this.enemyShip = new Enemy(this.canvas, this.toggleEnemy.bind(this));
         this.ship.hide();
         this.startDemo();
+        this.randomizeEnemyShip();
         this.animate();
     }
 
     // Private methods:
+    private randomizeEnemyShip(): void {
+        const toggleShip = (): void => {
+            const { min, max }: MinMax = this.enemyGenerationFrequency;
+            const timer: number = Math.round(getRandomInRange(min, max));
+
+            setTimeout((): void => {
+                if (!this.transitioning) {
+                    this.toggleEnemy(true);
+                }
+
+                toggleShip();
+            }, timer);
+        };
+
+        const randomFire = (): void => {
+            const { min, max }: MinMax = this.enemyFireFrequency;
+            const timer: number = Math.round(getRandomInRange(min, max));
+
+            setTimeout((): void => {
+                if (this.enemyShip.isActive() && !this.ship.isHidden()) {
+                    this.fireBullet(ShipSource.ENEMY);
+                }
+                randomFire();
+            }, timer);
+        };
+
+        toggleShip();
+        randomFire();
+    }
+
     private reset(): void {
         this.asteroidCounter.firstLevel = Config.GAME_ASTEROIDS_COUNT;
         this.asteroidSpeed = Config.ASTEROID_SPEED;
+        this.enemyGenerationFrequency =
+            Config.ENEMY_GENERATION_FREQUENCY_MINMAX;
+        this.enemyFireFrequency = Config.ENEMY_FIRE_FREQUENCY_MINMAX;
         this.lives = 3;
         this.score = 0;
         this.lastReward = 0;
@@ -188,15 +234,24 @@ export class Game {
 
     private restartShip(): void {
         if (this.explosions.length === 0) {
-            const allClear: boolean = this.asteroids.every(
-                (asteroid: Asteroid): boolean =>
-                    !radiusCollision(
-                        asteroid.getCenterPosition(),
-                        asteroid.getRadius(),
-                        getCenterCoordinatesOfCanvas(this.canvas),
-                        Config.SHIP_MANIFEST_RADIUS
-                    )
-            );
+            const allClear: boolean =
+                this.asteroids.every(
+                    (asteroid: Asteroid): boolean =>
+                        !radiusCollision(
+                            asteroid.getCenterPosition(),
+                            asteroid.getRadius(),
+                            getCenterCoordinatesOfCanvas(this.canvas),
+                            Config.SHIP_MANIFEST_RADIUS
+                        )
+                ) &&
+                (!this.enemyShip.isActive() ||
+                    (this.enemyShip.isActive() &&
+                        !radiusCollision(
+                            this.enemyShip.getPosition(),
+                            this.enemyShip.getRadius(),
+                            getCenterCoordinatesOfCanvas(this.canvas),
+                            Config.SHIP_MANIFEST_RADIUS
+                        )));
 
             if (allClear) {
                 this.ship.hide();
@@ -214,10 +269,7 @@ export class Game {
     private endLife(): void {
         this.ship.hide();
         this.soundEffects.thrust.volumeOff();
-        this.soundEffects.explode.play();
-        this.explosions.push(
-            new Explosion(this.canvas, this.ship.getCenterPosition())
-        );
+        this.explode(this.ship.getCenterPosition());
 
         if (!this.actions.Demo) {
             this.lives--;
@@ -263,7 +315,7 @@ export class Game {
 
         // move ship
         {
-            const loop: () => void = (): void => {
+            const loop = (): void => {
                 const timer: number = Math.round(getRandomInRange(1000, 5000));
                 this.demoTimers.push(
                     setTimeout((): void => {
@@ -277,7 +329,7 @@ export class Game {
 
         // rotate ship
         {
-            const loop: () => void = (): void => {
+            const loop = (): void => {
                 const timer: number = Math.round(getRandomInRange(1000, 5000));
                 const dir = Math.round(getRandomInRange(-1, 1));
                 this.demoTimers.push(
@@ -301,7 +353,7 @@ export class Game {
 
         // fire bullets
         {
-            const loop: () => void = (): void => {
+            const loop = (): void => {
                 const timer: number = Math.round(getRandomInRange(120, 500));
                 this.demoTimers.push(
                     setTimeout((): void => {
@@ -419,6 +471,14 @@ export class Game {
             this.level++;
             this.asteroidCounter.firstLevel += Config.GAME_ASTEROIDS_COUNT_GROW;
             this.asteroidSpeed += Config.GAME_ASTEROID_SPEED_INCREASE;
+            this.enemyGenerationFrequency = minMaxAdjuster(
+                this.enemyGenerationFrequency,
+                Config.ENEMY_FREQUENCY_PROGRESSION_RATE
+            );
+            this.enemyFireFrequency = minMaxAdjuster(
+                this.enemyFireFrequency,
+                Config.ENEMY_FREQUENCY_PROGRESSION_RATE
+            );
 
             this.messages.push(
                 new Message(
@@ -465,19 +525,31 @@ export class Game {
         return asteroids;
     }
 
-    private fireBullet(): void {
+    private fireBullet(source: ShipSource = ShipSource.PLAYER): void {
         if (!this.ship.isHidden()) {
-            this.bullets.push(
-                new Bullet(
-                    this.canvas,
-                    this.ship.getAngle(),
-                    this.ship.getNosePosition()
-                )
-            );
+            let angle: number;
+            let position: Coordinates2D;
 
-            this.setScore(Config.SCORE_FIRE_BULLET);
+            if (source === ShipSource.ENEMY) {
+                position = this.enemyShip.getPosition();
+                angle = getAngleOfTwoCoordinates(
+                    position,
+                    this.ship.getCenterPosition()
+                );
+            } else {
+                position = this.ship.getNosePosition();
+                angle = this.ship.getAngle();
+                this.setScore(Config.SCORE_FIRE_BULLET);
+            }
+
             this.soundEffects.laser.play();
+            this.bullets.push(new Bullet(this.canvas, angle, position, source));
         }
+    }
+
+    private explode(centerPosition: Coordinates2D): void {
+        this.soundEffects.explode.play();
+        this.explosions.push(new Explosion(this.canvas, centerPosition));
     }
 
     private setScore(score: number): void {
@@ -512,10 +584,21 @@ export class Game {
         this.actions.Thrust =
             thrust !== undefined ? thrust : !this.actions.Thrust;
         this.ship.toggleThrust(this.actions.Thrust);
+
         if (this.actions.Thrust) {
             this.soundEffects.thrust.play();
         } else {
             this.soundEffects.thrust.stop();
+        }
+    }
+    private toggleEnemy(enemy?: boolean): void {
+        this.actions.Enemy = enemy !== undefined ? enemy : !this.actions.Enemy;
+
+        if (this.actions.Enemy) {
+            this.enemyShip.start();
+            this.soundEffects.alien.play();
+        } else {
+            this.soundEffects.alien.stop();
         }
     }
 
@@ -572,12 +655,12 @@ export class Game {
             this.ship.rotate(1);
         }
 
-        this.ship.render();
         this.ship.animate();
+
+        this.enemyShip.animate();
 
         if (this.bullets.length > 0) {
             this.bullets.forEach((bullet: Bullet, idx: number): void => {
-                bullet.render();
                 bullet.animate();
                 if (bullet.isHidden()) {
                     this.bullets.splice(idx, 1);
@@ -587,7 +670,6 @@ export class Game {
 
         if (this.asteroids.length > 0) {
             this.asteroids.forEach((asteroid: Asteroid): void => {
-                asteroid.render();
                 asteroid.animate();
             });
         }
@@ -595,7 +677,6 @@ export class Game {
         if (this.explosions.length > 0) {
             this.explosions.forEach(
                 (explosion: Explosion, idx: number): void => {
-                    explosion.render();
                     explosion.animate();
                     if (explosion.isHidden()) {
                         this.explosions.splice(idx, 1);
@@ -606,9 +687,25 @@ export class Game {
 
         if (this.messages.length > 0) {
             this.messages.forEach((message: Message): void => {
-                message.render();
                 message.animate();
             });
+        }
+
+        // check for collision between ships
+        if (!this.ship.isHidden() && this.enemyShip.isActive()) {
+            if (
+                radiusCollision(
+                    this.ship.getCenterPosition(),
+                    this.ship.getRadius(),
+                    this.enemyShip.getPosition(),
+                    this.enemyShip.getRadius()
+                )
+            ) {
+                this.endLife();
+                this.enemyShip.die();
+                this.explode(this.enemyShip.getPosition());
+                this.setScore(Config.SCORE_ENEMY_DESTROYED);
+            }
         }
 
         // check for collision between ship and astroid
@@ -627,7 +724,6 @@ export class Game {
                     asteroidsIdx = i;
                     this.endLife();
                     this.setScore(Config.SCORE_ASTEROID_BY_COLLISION);
-                    this.ship.hide();
                     break loop;
                 }
             }
@@ -635,6 +731,50 @@ export class Game {
             if (asteroidsIdx !== undefined) {
                 this.breakupAsteroid(this.asteroids[asteroidsIdx]);
                 this.asteroids.splice(asteroidsIdx, 1);
+            }
+        }
+
+        // check for collision between ships and bullets
+        if (this.bullets.length > 0) {
+            loop: for (
+                let bulletsIdx = 0;
+                bulletsIdx < this.bullets.length;
+                bulletsIdx++
+            ) {
+                const bullet: Bullet = this.bullets[bulletsIdx];
+
+                // player ship to enemy bullet
+                if (
+                    !this.ship.isHidden() &&
+                    !bullet.isHidden() &&
+                    bullet.getSource() === ShipSource.ENEMY &&
+                    radiusCollision(
+                        bullet.getCenterPosition(),
+                        Math.max(Config.BULLET_WIDTH, Config.BULLET_HEIGHT),
+                        this.ship.getCenterPosition(),
+                        this.ship.getRadius()
+                    )
+                ) {
+                    this.endLife();
+                    this.bullets.splice(bulletsIdx, 1);
+                }
+
+                // enemy ship to player bullet
+                if (
+                    this.enemyShip.isActive() &&
+                    !bullet.isHidden() &&
+                    bullet.getSource() === ShipSource.PLAYER &&
+                    radiusCollision(
+                        bullet.getCenterPosition(),
+                        Math.max(Config.BULLET_WIDTH, Config.BULLET_HEIGHT),
+                        this.enemyShip.getPosition(),
+                        this.enemyShip.getRadius()
+                    )
+                ) {
+                    this.enemyShip.die();
+                    this.explode(this.enemyShip.getPosition());
+                    this.setScore(Config.SCORE_ENEMY_DESTROYED);
+                }
             }
         }
 
@@ -656,6 +796,7 @@ export class Game {
                     const asteroid: Asteroid = this.asteroids[asteroidsIdx];
                     const bullet: Bullet = this.bullets[bulletsIdx];
 
+                    // check for collision between bullet and astroid
                     if (
                         !bullet.isHidden() &&
                         radiusCollision(
@@ -680,7 +821,7 @@ export class Game {
             this.endLevel();
         }
 
-        this.music.render();
+        this.music.animate();
 
         requestAnimationFrame(this.animate.bind(this));
     }
